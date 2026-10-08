@@ -7,3 +7,6 @@ This file is also used to ensure that the prosthetic arm has the full intended m
 
 A separate .ino file exists which is for the actual live testing of the arm, and takes the analog input pins into account for the control of
 the servos.
+
+The teensy.exe file is used to allow the Teensy to be programmed via direct file upload, and is included here for the sake of posterity. The
+blink_both folder contains test files to be used with teensy.exe to ensure that the board is fully functional.
