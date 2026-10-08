@@ -22,10 +22,42 @@ int thumbPin = A4; // Pin 18, A4
 int wristPin1 = A5; // Pin 19, A5
 int wristPin2 = A6; // Pin 20, A6
 int wristPin3 = A7; // Pin 21, A7
-int elbowPin = A8; // Pin 22, A8
+int bicepPin = A8; // Pin 22, A8
+int tricepPin = A9; // Pin 23, A9
 int handAngleDefault = 0; // Default angle for finger servos, in degrees (placeholder)
 int elbowAngleDefault = 0; // Default angle for elbow servo, in degrees (placeholder)
 int wristAngleDefault = 90; // Default speed for wrist servos (90 is motionless, range of 0-180)
+
+// Create variables for input pin values
+int pinkyValue;
+int ringValue;
+int middleValue;
+int indexValue;
+int thumbValue;
+int wristValue1;
+int wristValue2;
+int wristValue3;
+int bicepValue;
+int tricepValue;
+
+// Threshold variables to determine servo position for fingers. Above the threshold results in 
+//fully closed, below is fully open. Only Middle and Thumb are used for now.
+//int pinkyThreshold;
+//int ringThreshold;
+int middleThreshold;
+//int indexThreshold;
+int thumbThreshold;
+
+// The elbow is based on whether or not the signal from the bicep/tricep are active. Each has a threshold, and
+// both or neither being active results in no elbow movement.
+int bicepThreshold;
+int tricepThreshold;
+
+// The wrist is based on three independent values for the three wheels, each determining how fast the wheel should
+// spin and in what direction. Not implemented for real control yet.
+//int wristThreshold1;
+//int wristThreshold2;
+//int wristThreshold3;
 
 void setup() {
   // Set the pins to be used for each servo, based on Teensy 4.1 pinout
@@ -42,9 +74,9 @@ void setup() {
   // Set servos to their default value on startup
   //pinkyServo.write(handAngleDefault);
   //ringServo.write(handAngleDefault);
-  //middleServo.write(handAngleDefault);
+  middleServo.write(handAngleDefault);
   //indexServo.write(handAngleDefault);
-  //thumbServo.write(handAngleDefault);
+  thumbServo.write(handAngleDefault);
   elbowServo.write(elbowAngleDefault);
   // More math will need to be done to "center" the wrist, may not actually be possible
   // without persistent storage. The wrist servos are continuous so thye don't have a built-in
@@ -56,12 +88,46 @@ void setup() {
 }
 
 void loop() {
-  // Set servos to certain values for test movements. Range is 0 - 180, this will eventually be
-  // based on signal input but just a test for now
+  // Update the values for each input pin
+  //pinkyValue = analogRead(pinkyPin);
+  //ringValue = analogRead(ringPin);
+  middleValue = analogRead(middlePin);
+  //indexValue = analogRead(indexPin);
+  thumbValue = analogRead(thumbPin);
+  //wristValue1 = analogRead(wristPin1);
+  //wristValue2 = analogRead(wristPin2);
+  //wristValue3 = analogRead(wristPin3);
+  bicepValue = analogRead(bicepPin);
+  tricepValue = analogRead(tricepPin);
 
-  // Move a servo in one direction then move it back, with a delay.
-  elbowServo.write(0);
-  delay(1000);
-  elbowServo.write(0);
-  delay(1000);
+  // Set the values for each servo based on the input value. Each needs a certain threshold set based on what
+  // the actual input is for that pin. Currently setting the elbow, thumb, and middle servos.
+
+  // Current servo setting is overly simplified, actual setting should be based on an analog signal, higher
+  // signal means more curling, to allow for greater control. Elbow especially would benefit from this, where a 
+  // more tensed muscle equals more movement in that direction.
+
+  // Thumb servo setting
+  if (thumbValue > thumbThreshold) {
+    thumbServo.write(180);
+  } else {
+    thumbServo.write(0);
+  }
+
+  // Middle servo setting
+  if (middleValue > middleThreshold) {
+    middleServo.write(180);
+  } else {
+    middleServo.write(0);
+  }
+
+  // Elbow servo setting. Slightly more complex than fingers due to bicep/tricep checks.
+  // Elbow is set as curled with bicep, extended with tricep, and halfway with both/neither.
+  if (bicepValue > bicepThreshold && tricepValue < tricepThreshold) {
+    elbowServo.write(180);
+  } else if (bicepValue < bicepThreshold && tricepValue > tricepThreshold) {
+    elbowServo.write(0);
+  } else {
+    elbowServo.write(90);
+  }
 }
