@@ -1,126 +1,110 @@
-#include <Servo.h>
+#include <PCA9685.h>
+// #include <EEPROM.h>
+// int eepromAddress = 0; // Set the default address for the eeprom to 0
+// int wristMemStart = 0;
 
-// Setup for servo variables
-Servo pinkyServo;
-Servo indexServo;
-Servo middleServo;
-Servo ringServo;
-Servo thumbServo;
-Servo wristServo1;
-Servo wristServo2;
-Servo wristServo3;
-Servo elbowServo;
+// Setup for servo channels on PCA9685
+int pinkyServo = 0;
+int ringServo = 1;
+int middleServo = 2;
+int indexServo = 3;
+int thumbServo = 4;
+int wristServo1 = 5;
+int wristServo2 = 6;
+int wristServo3 = 7;
+int elbowServo = 8;
 
-// Set input pins for values from sensor board(s). All fingers are placed independently to
-// future-proof to an extent, the Middle and Thumb are the only ones used for this version.
-// The Middle pin controls all four fingers and the Thumb pin controls the thumb
-int pinkyPin = A0; // Pin 14, A0
-int ringPin = A1; // Pin 15, A1
-int middlePin = A2; // Pin 16, A2
-int indexPin = A3; // Pin 17, A3
-int thumbPin = A4; // Pin 18, A4
-int wristPin1 = A5; // Pin 19, A5
-int wristPin2 = A6; // Pin 20, A6
-int wristPin3 = A7; // Pin 21, A7
-int bicepPin = A8; // Pin 22, A8
-int tricepPin = A9; // Pin 23, A9
-int handAngleDefault = 0; // Default angle for finger servos, in degrees (placeholder)
-int elbowAngleDefault = 0; // Default angle for elbow servo, in degrees (placeholder)
-int wristAngleDefault = 90; // Default speed for wrist servos (90 is motionless, range of 0-180)
+PCA9685 pwmController(Wire); // Set up the servo driver interface
+PCA9685_ServoEval pwmServoSG90(102, 307, 512);
+PCA9685_ServoEval pwmServoHV(102, 307, 512);
+PCA9685_ServoEval pwmServoHS422(102, 307, 512);
 
-// Create variables for input pin values
-int pinkyValue;
-int ringValue;
-int middleValue;
-int indexValue;
-int thumbValue;
-int wristValue1;
-int wristValue2;
-int wristValue3;
-int bicepValue;
-int tricepValue;
-
-int testIncrement = 0; //Test value
-int incrementDirection = 1; //Test value
+int handAngleDefault = -90; // Default angle for finger servos, in degrees (-90 to +90)
+int elbowAngleDefault = -90; // Default angle for elbow servo, in degrees (-90 to +90)
+int wristAngleDefault = 0; // Default speed for wrist servos (0 is motionless, range of -90 to 90)
 
 void setup() {
-  // Set the pins to be used for each servo, based on Teensy 4.1 pinout
-  pinkyServo.attach(0);
-  ringServo.attach(1);
-  middleServo.attach(2);
-  indexServo.attach(3);
-  thumbServo.attach(4);
-  wristServo1.attach(5);
-  wristServo2.attach(6);
-  wristServo3.attach(7);
-  elbowServo.attach(8);
+  pinMode(LED_BUILTIN, OUTPUT);
+  // Start communication with the servo driver
+  Serial.begin(115200);               // Begin Serial and Wire interfaces
+  Wire.begin();                      // Start up the Wire communication
+  pwmController.resetDevices();       // Reset devices on i2c lines to clean slate
+  pwmController.init();               // Initializes module with default settings from library
+  pwmController.setPWMFrequency(200);
+  pwmController.setPWMFreqServo();    // Sets servo frequency to 50Hz, which is the standard 20ms phase
 
-  // Set servos to their default value on startup
-  //pinkyServo.write(handAngleDefault);
-  //ringServo.write(handAngleDefault);
-  //middleServo.write(handAngleDefault);
-  //indexServo.write(handAngleDefault);
-  //thumbServo.write(handAngleDefault);
-  elbowServo.write(elbowAngleDefault);
+  // Set servos to their correct value
+  pwmController.setChannelsPWM(0, 5, pwmServoSG90.pwmForAngle(-90));
+  pwmController.setChannelsPWM(5, 3, pwmServoHV.pwmForAngle(0));
+  pwmController.setChannelPWM(8, pwmServoHS422.pwmForAngle(-90));
+  delay(2000);
+  
   // More math will need to be done to "center" the wrist, may not actually be possible
-  // without persistent storage. The wrist servos are continuous so thye don't have a built-in
-  // "default" position/angle like the finger servos. This is essentially telling them to not move
+  // without persistent storage. The wrist servos are continuous so they don't have a built-in
+  // "default" position/angle like the finger servos. This is just telling them to not move
   // as the startup code.
-  //wristServo1.write(wristAngleDefault);
-  //wristServo2.write(wristAngleDefault);
-  //wristServo3.write(wristAngleDefault);
 }
 
 void loop() {
-  // Update the values for each input pin
-  //pinkyValue = analogRead(pinkyPin);
-  //ringValue = analogRead(ringPin);
-  //middleValue = analogRead(middlePin);
-  //indexValue = analogRead(indexPin);
-  //thumbValue = analogRead(thumbPin);
-  //wristValue1 = analogRead(wristPin1);
-  //wristValue2 = analogRead(wristPin2);
-  //wristValue3 = analogRead(wristPin3);
-  //bicepValue = analogRead(bicepPin);
-  //tricepValue = analogRead(tricepPin);
-
-  // Set some test values for the elbow servo to make sure this all works as intended
-  
-  if (incrementDirection > 0) {
-    bicepValue = 5;
-    tricepValue = 4;
-  } else if (incrementDirection < 0) {
-    bicepValue = 4;
-    tricepValue = 5;
-  } else if (incrementDirection == 0) {
-    bicepValue = 5;
-    tricepValue = 5;
-  }
-
-  // Use the input pins to determine which servos should move, if any
-  if (bicepValue > tricepValue) { // Extremely simple example, replace with filter code for elbow
-    elbowServo.write(180);
-  } else if (tricepValue > bicepValue) {
-    elbowServo.write(0);
-  } else if (tricepValue == bicepValue) {
-    elbowServo.write(90);
-  }
-
-  if (incrementDirection == 0) {
-    delay(1000);
-    if (testIncrement == 10) {
-      incrementDirection = -1;
-    } else {
-      incrementDirection = 1;
-    }
-  }
-
-  testIncrement = testIncrement + incrementDirection;
-
-  if (testIncrement == 10) {
-    incrementDirection = 0;
-  } else if (testIncrement == 0) {
-    incrementDirection = 0;
-  }
+  digitalWrite(LED_BUILTIN, HIGH);
+  // Begin the test sequence, going through each individual part of the arm and displaying
+  // the different functions
+  // Elbow movement code
+  pwmController.setChannelPWM(8, pwmServoHS422.pwmForAngle(-20));
+  delay(1000);
+  pwmController.setChannelPWM(8, pwmServoHS422.pwmForAngle(-90));
+  delay(1000);
+  // End elbow movement
+  // Wrist movement code here, once I figure out the math
+  // Just rotation for now, go one direction for 1 second, then the other for 1 second, then stop
+  // For now 1 at a time to confirm they all work, once better power source is found can move more at once (too much current)
+  pwmController.setChannelPWM(5, pwmServoHV.pwmForSpeed(90));
+  delay(500);
+  pwmController.setChannelPWM(5, pwmServoHV.pwmForSpeed(-90));
+  delay(500);
+  pwmController.setChannelPWM(5, 0);
   delay(100);
+  pwmController.setChannelPWM(6, pwmServoHV.pwmForSpeed(90));
+  delay(500);
+  pwmController.setChannelPWM(6, pwmServoHV.pwmForSpeed(-90));
+  delay(500);
+  pwmController.setChannelPWM(6, 0);
+  delay(100);
+  pwmController.setChannelPWM(7, pwmServoHV.pwmForSpeed(90));
+  delay(500);
+  pwmController.setChannelPWM(7, pwmServoHV.pwmForSpeed(-90));
+  delay(500);
+  pwmController.setChannelPWM(7, 0);
+  delay(1000);
+  // Update wrist position values, requires position-readable wrist servos
+  //eepromAddress = 0;
+  //EEPROM.update(eepromAddress, position1);
+  //eepromAddres += sizeof(position1);
+  //EEPROM.update(eepromAddress, position2);
+  //eepromAddres += sizeof(position2);
+  //EEPROM.update(eepromAddress, position3);
+  // End wrist movement
+  // Hand movement code, slight delay between each finger moving to have a "smooth" motion
+  pwmController.setChannelPWM(0, pwmServoSG90.pwmForAngle(90));
+  delay(100);
+  pwmController.setChannelPWM(1, pwmServoSG90.pwmForAngle(90));
+  delay(100);
+  pwmController.setChannelPWM(2, pwmServoSG90.pwmForAngle(90));
+  delay(100);
+  pwmController.setChannelPWM(3, pwmServoSG90.pwmForAngle(90));
+  delay(100);
+  pwmController.setChannelPWM(4, pwmServoSG90.pwmForAngle(90));
+  delay(1000);
+  pwmController.setChannelPWM(4, pwmServoSG90.pwmForAngle(0));
+  delay(100);
+  pwmController.setChannelPWM(3, pwmServoSG90.pwmForAngle(0));
+  delay(100);
+  pwmController.setChannelPWM(2, pwmServoSG90.pwmForAngle(0));
+  delay(100);
+  pwmController.setChannelPWM(1, pwmServoSG90.pwmForAngle(0));
+  delay(100);
+  pwmController.setChannelPWM(0, pwmServoSG90.pwmForAngle(0));
+  delay(100);
+  // End hand movement
+  delay(2000); // Delay before the loop restarts
 }
