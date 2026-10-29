@@ -21,7 +21,7 @@ PCA9685_ServoEval pwmServoHS422(102, 307, 512);
 
 int handAngleDefault = -90; // Default angle for finger servos, in degrees (-90 to +90)
 int elbowAngleDefault = -90; // Default angle for elbow servo, in degrees (-90 to +90)
-int wristAngleDefault = 0; // Default speed for wrist servos (0 is motionless, range of -90 to 90)
+int wristSpeedDefault = 0; // Default speed for wrist servos (0 is motionless, range of -90 to 90)
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -63,13 +63,13 @@ void loop() {
   pwmController.setChannelPWM(5, pwmServoHV.pwmForSpeed(-90));
   delay(500);
   pwmController.setChannelPWM(5, 0);
-  delay(100);
+  delay(200);
   pwmController.setChannelPWM(6, pwmServoHV.pwmForSpeed(90));
   delay(500);
   pwmController.setChannelPWM(6, pwmServoHV.pwmForSpeed(-90));
   delay(500);
   pwmController.setChannelPWM(6, 0);
-  delay(100);
+  delay(200);
   pwmController.setChannelPWM(7, pwmServoHV.pwmForSpeed(90));
   delay(500);
   pwmController.setChannelPWM(7, pwmServoHV.pwmForSpeed(-90));
@@ -86,25 +86,25 @@ void loop() {
   // End wrist movement
   // Hand movement code, slight delay between each finger moving to have a "smooth" motion
   pwmController.setChannelPWM(0, pwmServoSG90.pwmForAngle(90));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(1, pwmServoSG90.pwmForAngle(90));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(2, pwmServoSG90.pwmForAngle(90));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(3, pwmServoSG90.pwmForAngle(90));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(4, pwmServoSG90.pwmForAngle(90));
   delay(1000);
   pwmController.setChannelPWM(4, pwmServoSG90.pwmForAngle(0));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(3, pwmServoSG90.pwmForAngle(0));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(2, pwmServoSG90.pwmForAngle(0));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(1, pwmServoSG90.pwmForAngle(0));
-  delay(100);
+  delay(150);
   pwmController.setChannelPWM(0, pwmServoSG90.pwmForAngle(0));
-  delay(100);
+  // delay(200);
   // End hand movement
   delay(2000); // Delay before the loop restarts
 }
